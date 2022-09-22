@@ -18,7 +18,8 @@ TEST_CASES = [
         {
             "type": "Prio3Aes128Histogram",
             "buckets": ["1", "3", "10", "30"],
-        }, 10,
+        },
+        10,
     ),
     TestCase(
         "prio3_histogram_12_buckets",
@@ -27,6 +28,7 @@ TEST_CASES = [
             "buckets": [
                 "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
             ],
-        }, 10
+        },
+        10,
     ),
 ]

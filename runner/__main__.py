@@ -108,11 +108,11 @@ def main():
             try:
                 run_test(client, image_set, test_case)
                 print(f"{image_set.client}, {image_set.leader}, "
-                      f"{image_set.helper}, {image_set.collector} "
+                      f"{image_set.helper}, {image_set.collector} - "
                       f"{test_case.name}: pass")
             except Exception:
                 print(f"{image_set.client}, {image_set.leader}, "
-                      f"{image_set.helper}, {image_set.collector} "
+                      f"{image_set.helper}, {image_set.collector} - "
                       f"{test_case.name}: error")
                 raise
 
