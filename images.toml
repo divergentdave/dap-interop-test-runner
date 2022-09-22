@@ -1,0 +1,15 @@
+# For now, all of these images are not available on any registries. They must
+# be built locally, and of course --pull cannot update them automatically.
+client = [
+    "janus_interop_client",
+    "divviup_ts_interop_client",
+]
+leader = [
+    "janus_interop_aggregator",
+]
+helper = [
+    "janus_interop_aggregator",
+]
+collector = [
+    "janus_interop_collector",
+]
