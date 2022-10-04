@@ -1,10 +1,43 @@
 import base64
 import contextlib
+import io
+import os
+import shutil
 from urllib.parse import urljoin
+import tarfile
 
 import docker  # type: ignore
 import requests
 import requests.adapters
+
+
+class GeneratorStreamAdapter(io.RawIOBase):
+    def __init__(self, gen):
+        self.gen = gen
+        self.remainder = b""
+
+    def readable(self):
+        return True
+
+    def readinto(self, buffer):
+        if self.remainder:
+            chunk = self.remainder
+        else:
+            try:
+                chunk = next(self.gen)
+            except StopIteration:
+                return 0
+
+        if len(chunk) <= len(buffer):
+            length = len(chunk)
+            buffer[:length] = chunk
+            self.remainder = b""
+            return length
+        else:
+            length = len(buffer)
+            buffer[:length] = chunk[:length]
+            self.remainder = chunk[length:]
+            return length
 
 
 class DAPContainer:
@@ -73,6 +106,38 @@ class DAPContainer:
                 "/internal/test/ready with a status code of "
                 f"{response.status_code}"
             )
+
+    def copy_logs_directory(self, directory: str):
+        gen, _stat_info = self._container.get_archive("/logs")
+        stream = GeneratorStreamAdapter(gen)
+        buffered_stream = io.BufferedReader(stream)
+        with tarfile.open(fileobj=buffered_stream, mode="r|") as tf:
+            for entry in tf:
+                assert not os.path.isabs(entry.name)
+                assert ".." not in entry.name
+                if entry.type == tarfile.REGTYPE:
+                    extract_file = tf.extractfile(entry)
+                    # This shouldn't be None, we checked type == REGTYPE.
+                    assert extract_file is not None
+
+                    name = entry.name.removeprefix("logs/")
+                    destination = os.path.join(directory, name)
+                    os.makedirs(os.path.dirname(destination), exist_ok=True)
+                    with open(destination, "wb") as dest_file:
+                        shutil.copyfileobj(extract_file, dest_file)
+
+    def save_process_logs(self, path: str):
+        # Get stdout and stderr output from the container, combined together.
+        gen = self._container.logs(stream=True, follow=False)
+
+        # Write this out to a file at the given path, only lazily creating
+        # the file if the log output is non-empty.
+        first_chunk = next(gen, None)
+        if first_chunk is not None:
+            with open(path, "wb") as f:
+                f.write(first_chunk)
+                for chunk in gen:
+                    f.write(chunk)
 
 
 def encode_base64url(data: bytes) -> str:
