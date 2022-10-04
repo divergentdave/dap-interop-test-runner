@@ -1,6 +1,7 @@
 import argparse
 import logging
 import sys
+import traceback
 
 try:
     import tomllib  # type: ignore
@@ -111,10 +112,10 @@ def main():
                       f"{image_set.helper}, {image_set.collector} - "
                       f"{test_case.name}: pass")
             except Exception:
+                traceback.print_exc()
                 print(f"{image_set.client}, {image_set.leader}, "
                       f"{image_set.helper}, {image_set.collector} - "
                       f"{test_case.name}: error")
-                raise
 
 
 if __name__ == "__main__":
