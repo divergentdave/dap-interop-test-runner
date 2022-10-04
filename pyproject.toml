@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools >= 61.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "runner"
+version = "0.0.0"
+dependencies = [
+    "docker ~= 6.0.0",
+    "requests",
+    "tomli ~= 2.0.1 ; python_version < '3.11'",
+    "types-requests",
+]
