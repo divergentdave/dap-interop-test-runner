@@ -5,6 +5,7 @@ import os
 import shutil
 from urllib.parse import urljoin
 import tarfile
+from typing import List, Union
 
 import docker  # type: ignore
 import requests
@@ -150,7 +151,7 @@ def encode_base64url(data: bytes) -> str:
 class ClientContainer(DAPContainer):
     def upload(self, task_id: bytes, leader_endpoint: str,
                helper_endpoint: str, vdaf: dict, measurement: str,
-               nonce_time: int | None, min_batch_duration: int):
+               nonce_time: Union[int, None], min_batch_duration: int):
         request_body = {
             "taskId": encode_base64url(task_id),
             "leader": leader_endpoint,
@@ -178,7 +179,7 @@ class AggregatorContainer(DAPContainer):
 
     def add_task(self, task_id: bytes, aggregator_id: int,
                  leader_endpoint: str, helper_endpoint: str, vdaf: dict,
-                 leader_token: str, collector_token: str | None,
+                 leader_token: str, collector_token: Union[str, None],
                  verify_key: bytes, max_batch_lifetime: int,
                  min_batch_size: int, min_batch_duration: int,
                  collector_hpke_config_base64: str):
@@ -226,7 +227,7 @@ class CollectorContainer(DAPContainer):
             "internal/test/collect_start", request_body)
         return response_body["handle"]
 
-    def collect_poll(self, handle: str) -> str | list[str] | None:
+    def collect_poll(self, handle: str) -> Union[str, List[str], None]:
         request_body = {"handle": handle}
         response_body = self.make_request(
             "internal/test/collect_poll", request_body)

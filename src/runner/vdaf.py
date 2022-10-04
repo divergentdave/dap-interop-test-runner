@@ -1,4 +1,5 @@
 import random
+from typing import List, Union
 
 
 def generate_measurement(vdaf_dict: dict) -> str:
@@ -33,7 +34,7 @@ def generate_measurement(vdaf_dict: dict) -> str:
 
 
 def aggregate_measurements(vdaf_dict: dict, _aggregation_param: None,
-                           measurements: list[str]) -> str | list[str]:
+                           measurements: List[str]) -> Union[str, List[str]]:
     """
     Compute the expected aggregate result from running a VDAF over a list of
     measurements with a given aggregation parameter.
