@@ -1,4 +1,5 @@
 import argparse
+import collections
 import logging
 import sys
 import traceback
@@ -104,6 +105,10 @@ def main():
         if matches:
             filtered_test_cases.append(test_case)
 
+    any_error = False
+    success_counters = collections.OrderedDict(
+        (image_set, 0) for image_set in image_sets
+    )
     for image_set in image_sets:
         for test_case in filtered_test_cases:
             try:
@@ -111,11 +116,27 @@ def main():
                 print(f"{image_set.client}, {image_set.leader}, "
                       f"{image_set.helper}, {image_set.collector} - "
                       f"{test_case.name}: pass")
+                success_counters[image_set] += 1
             except Exception:
                 traceback.print_exc()
                 print(f"{image_set.client}, {image_set.leader}, "
                       f"{image_set.helper}, {image_set.collector} - "
-                      f"{test_case.name}: error")
+                      f"{test_case.name}: fail")
+                any_error = True
+    print()
+
+    if TEST_CASES != filtered_test_cases:
+        print(f"Filter selected {len(filtered_test_cases)} out of "
+              f"{len(TEST_CASES)} test cases")
+
+    for image_set, success_count in success_counters.items():
+        print(f"{image_set.client}, {image_set.leader}, {image_set.helper}, "
+              f"{image_set.collector}: {success_count}/"
+              f"{len(filtered_test_cases)} passed")
+
+    if any_error:
+        print("Files captured from the most recent failed test case have been "
+              "saved to the directory ./error_logs/")
 
 
 if __name__ == "__main__":
