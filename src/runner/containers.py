@@ -121,7 +121,9 @@ class DAPContainer:
                     # This shouldn't be None, we checked type == REGTYPE.
                     assert extract_file is not None
 
-                    name = entry.name.removeprefix("logs/")
+                    name = entry.name
+                    if name.startswith("logs/"):
+                        name = name[5:]
                     destination = os.path.join(directory, name)
                     os.makedirs(os.path.dirname(destination), exist_ok=True)
                     with open(destination, "wb") as dest_file:
