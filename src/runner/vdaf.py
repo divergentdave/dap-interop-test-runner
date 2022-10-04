@@ -1,4 +1,5 @@
 import random
+import secrets
 from typing import List, Union
 
 
@@ -64,6 +65,6 @@ def generate_verify_key(vdaf_dict: dict) -> bytes:
     vdaf_type = vdaf_dict["type"]
     if vdaf_type in ("Prio3Aes128Count", "Prio3Aes128Sum",
                      "Prio3Aes128Histogram"):
-        return random.randbytes(16)
+        return secrets.token_bytes(16)
     else:
         raise Exception(f"Unsupported VDAF: {vdaf_type}")

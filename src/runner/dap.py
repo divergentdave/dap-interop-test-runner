@@ -1,9 +1,10 @@
 import random
+import secrets
 import string
 
 
 def generate_task_id():
-    return random.randbytes(32)
+    return secrets.token_bytes(32)
 
 
 def generate_auth_token(label: str):
