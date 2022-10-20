@@ -150,28 +150,39 @@ def encode_base64url(data: bytes) -> str:
     return base64.b64encode(data, b"-_").rstrip(b"=").decode("ASCII")
 
 
+class DAPContainerWithAuth(DAPContainer):
+    def add_authentication_token(self, task_id: bytes, role: str, token: str):
+        request_body = {
+            "task_id": encode_base64url(task_id),
+            "role": role,
+            "token": token,
+        }
+        self.make_request(
+            "internal/test/add_authentication_token", request_body)
+
+
 class ClientContainer(DAPContainer):
     def upload(self, task_id: bytes, leader_endpoint: str,
                helper_endpoint: str, vdaf: dict, measurement: str,
-               nonce_time: Union[int, None], min_batch_duration: int):
+               time: Union[int, None], time_precision: int):
         request_body = {
-            "taskId": encode_base64url(task_id),
+            "task_id": encode_base64url(task_id),
             "leader": leader_endpoint,
             "helper": helper_endpoint,
             "vdaf": vdaf,
             "measurement": measurement,
-            "minBatchDuration": min_batch_duration,
+            "time_precision": time_precision,
         }
-        if nonce_time is not None:
-            request_body["nonceTime"] = nonce_time
+        if time is not None:
+            request_body["time"] = time
         self.make_request("internal/test/upload", request_body)
 
 
-class AggregatorContainer(DAPContainer):
-    def endpoint_for_task(self, task_id: bytes, aggregator_id: int):
+class AggregatorContainer(DAPContainerWithAuth):
+    def endpoint_for_task(self, task_id: bytes, role: str):
         request_body = {
-            "taskId": encode_base64url(task_id),
-            "aggregatorId": aggregator_id,
+            "task_id": encode_base64url(task_id),
+            "role": role,
             "hostname": self._container.name,
         }
         response_body = self.make_request(
@@ -179,51 +190,52 @@ class AggregatorContainer(DAPContainer):
         raw_endpoint = response_body["endpoint"]
         return urljoin(self.container_base_url(), raw_endpoint)
 
-    def add_task(self, task_id: bytes, aggregator_id: int,
+    def add_task(self, task_id: bytes, role: str,
                  leader_endpoint: str, helper_endpoint: str, vdaf: dict,
-                 leader_token: str, collector_token: Union[str, None],
-                 verify_key: bytes, max_batch_lifetime: int,
-                 min_batch_size: int, min_batch_duration: int,
-                 collector_hpke_config_base64: str):
+                 verify_key: bytes, max_batch_query_count: int,
+                 min_batch_size: int, time_precision: int,
+                 collector_hpke_config_base64: str, task_expiration: int):
         request_body = {
-            "taskId": encode_base64url(task_id),
+            "task_id": encode_base64url(task_id),
             "leader": leader_endpoint,
             "helper": helper_endpoint,
             "vdaf": vdaf,
-            "leaderAuthenticationToken": leader_token,
-            "aggregatorId": aggregator_id,
-            "verifyKey": encode_base64url(verify_key),
-            "maxBatchLifetime": max_batch_lifetime,
-            "minBatchSize": min_batch_size,
-            "minBatchDuration": min_batch_duration,
-            "collectorHpkeConfig": collector_hpke_config_base64,
+            "role": role,
+            "verify_key": encode_base64url(verify_key),
+            "max_batch_query_count": max_batch_query_count,
+            "query_type": 1,
+            "min_batch_size": min_batch_size,
+            "time_precision": time_precision,
+            "collector_hpke_config": collector_hpke_config_base64,
+            "task_expiration": task_expiration,
         }
-        if collector_token is not None:
-            request_body["collectorAuthenticationToken"] = collector_token
         self.make_request("internal/test/add_task", request_body)
 
 
-class CollectorContainer(DAPContainer):
-    def add_task(self, task_id: bytes, leader_endpoint: str, vdaf: dict,
-                 auth_token: str) -> str:
+class CollectorContainer(DAPContainerWithAuth):
+    def add_task(self, task_id: bytes, leader_endpoint: str,
+                 vdaf: dict) -> str:
         request_body = {
-            "taskId": encode_base64url(task_id),
+            "task_id": encode_base64url(task_id),
             "leader": leader_endpoint,
             "vdaf": vdaf,
-            "collectorAuthenticationToken": auth_token,
+            "query_type": 1,
         }
         response_body = self.make_request(
             "internal/test/add_task", request_body)
-        return response_body["collectorHpkeConfig"]
+        return response_body["collector_hpke_config"]
 
     def collect_start(self, task_id: bytes, _aggregation_param: None,
                       batch_interval_start: int,
                       batch_interval_duration: int) -> str:
         request_body = {
-            "taskId": encode_base64url(task_id),
-            "aggParam": "",
-            "batchIntervalStart": batch_interval_start,
-            "batchIntervalDuration": batch_interval_duration,
+            "task_id": encode_base64url(task_id),
+            "agg_param": "",
+            "query": {
+                "type": 1,
+                "batch_interval_start": batch_interval_start,
+                "batch_interval_duration": batch_interval_duration,
+            }
         }
         response_body = self.make_request(
             "internal/test/collect_start", request_body)
@@ -239,7 +251,7 @@ class CollectorContainer(DAPContainer):
             return response_body["result"]
 
 
-@ contextlib.contextmanager
+@contextlib.contextmanager
 def container_network(client: docker.DockerClient, name: str):
     network = client.networks.create(
         name,
