@@ -103,10 +103,6 @@ def run_test_inner(client_container: ClientContainer,
         task_id,
         leader_endpoint,
         test_case.vdaf,
-    )
-    collector_container.add_authentication_token(
-        task_id,
-        "collector",
         collector_auth_token,
     )
 
@@ -122,22 +118,14 @@ def run_test_inner(client_container: ClientContainer,
         leader_endpoint,
         helper_endpoint,
         test_case.vdaf,
+        aggregator_auth_token,
+        collector_auth_token,
         verify_key,
         max_batch_query_count,
         min_batch_size,
         time_precision,
         collector_hpke_config_base64,
         task_expiration,
-    )
-    leader_container.add_authentication_token(
-        task_id,
-        "leader",
-        aggregator_auth_token,
-    )
-    leader_container.add_authentication_token(
-        task_id,
-        "collector",
-        collector_auth_token,
     )
     helper_container.add_task(
         task_id,
@@ -145,17 +133,14 @@ def run_test_inner(client_container: ClientContainer,
         leader_endpoint,
         helper_endpoint,
         test_case.vdaf,
+        aggregator_auth_token,
+        None,
         verify_key,
         max_batch_query_count,
         min_batch_size,
         time_precision,
         collector_hpke_config_base64,
         task_expiration,
-    )
-    helper_container.add_authentication_token(
-        task_id,
-        "leader",
-        aggregator_auth_token,
     )
 
     batch_interval_start = int(

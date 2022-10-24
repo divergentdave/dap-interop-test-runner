@@ -150,17 +150,6 @@ def encode_base64url(data: bytes) -> str:
     return base64.b64encode(data, b"-_").rstrip(b"=").decode("ASCII")
 
 
-class DAPContainerWithAuth(DAPContainer):
-    def add_authentication_token(self, task_id: bytes, role: str, token: str):
-        request_body = {
-            "task_id": encode_base64url(task_id),
-            "role": role,
-            "token": token,
-        }
-        self.make_request(
-            "internal/test/add_authentication_token", request_body)
-
-
 class ClientContainer(DAPContainer):
     def upload(self, task_id: bytes, leader_endpoint: str,
                helper_endpoint: str, vdaf: dict, measurement: str,
@@ -178,7 +167,7 @@ class ClientContainer(DAPContainer):
         self.make_request("internal/test/upload", request_body)
 
 
-class AggregatorContainer(DAPContainerWithAuth):
+class AggregatorContainer(DAPContainer):
     def endpoint_for_task(self, task_id: bytes, role: str):
         request_body = {
             "task_id": encode_base64url(task_id),
@@ -192,6 +181,7 @@ class AggregatorContainer(DAPContainerWithAuth):
 
     def add_task(self, task_id: bytes, role: str,
                  leader_endpoint: str, helper_endpoint: str, vdaf: dict,
+                 leader_token: str, collector_token: Union[str, None],
                  verify_key: bytes, max_batch_query_count: int,
                  min_batch_size: int, time_precision: int,
                  collector_hpke_config_base64: str, task_expiration: int):
@@ -200,6 +190,7 @@ class AggregatorContainer(DAPContainerWithAuth):
             "leader": leader_endpoint,
             "helper": helper_endpoint,
             "vdaf": vdaf,
+            "leader_authentication_token": leader_token,
             "role": role,
             "verify_key": encode_base64url(verify_key),
             "max_batch_query_count": max_batch_query_count,
@@ -209,16 +200,19 @@ class AggregatorContainer(DAPContainerWithAuth):
             "collector_hpke_config": collector_hpke_config_base64,
             "task_expiration": task_expiration,
         }
+        if collector_token is not None:
+            request_body["collector_authentication_token"] = collector_token
         self.make_request("internal/test/add_task", request_body)
 
 
-class CollectorContainer(DAPContainerWithAuth):
+class CollectorContainer(DAPContainer):
     def add_task(self, task_id: bytes, leader_endpoint: str,
-                 vdaf: dict) -> str:
+                 vdaf: dict, auth_token: str) -> str:
         request_body = {
             "task_id": encode_base64url(task_id),
             "leader": leader_endpoint,
             "vdaf": vdaf,
+            "collector_authentication_token": auth_token,
             "query_type": 1,
         }
         response_body = self.make_request(
