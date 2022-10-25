@@ -1,4 +1,5 @@
 import contextlib
+import datetime
 import os
 import random
 import shutil
@@ -95,8 +96,8 @@ def run_test_inner(client_container: ClientContainer,
     collector_auth_token = generate_auth_token("collector")
     verify_key = generate_verify_key(test_case.vdaf)
 
-    leader_endpoint = leader_container.endpoint_for_task(task_id, 0)
-    helper_endpoint = helper_container.endpoint_for_task(task_id, 1)
+    leader_endpoint = leader_container.endpoint_for_task(task_id, "leader")
+    helper_endpoint = helper_container.endpoint_for_task(task_id, "helper")
 
     collector_hpke_config_base64 = collector_container.add_task(
         task_id,
@@ -106,42 +107,45 @@ def run_test_inner(client_container: ClientContainer,
     )
 
     # Fix these task parameters for now
-    max_batch_lifetime = 1
+    max_batch_query_count = 1
     min_batch_size = 1
-    min_batch_duration = 3600
+    time_precision = 3600
+    task_expiration = int(datetime.datetime(3000, 1, 1, 0, 0, 0).timestamp())
 
     leader_container.add_task(
         task_id,
-        0,
+        "leader",
         leader_endpoint,
         helper_endpoint,
         test_case.vdaf,
         aggregator_auth_token,
         collector_auth_token,
         verify_key,
-        max_batch_lifetime,
+        max_batch_query_count,
         min_batch_size,
-        min_batch_duration,
-        collector_hpke_config_base64
+        time_precision,
+        collector_hpke_config_base64,
+        task_expiration,
     )
     helper_container.add_task(
         task_id,
-        1,
+        "helper",
         leader_endpoint,
         helper_endpoint,
         test_case.vdaf,
         aggregator_auth_token,
         None,
         verify_key,
-        max_batch_lifetime,
+        max_batch_query_count,
         min_batch_size,
-        min_batch_duration,
-        collector_hpke_config_base64
+        time_precision,
+        collector_hpke_config_base64,
+        task_expiration,
     )
 
     batch_interval_start = int(
-        time.time() // min_batch_duration) * min_batch_duration
-    batch_interval_duration = min_batch_duration * 2
+        time.time() // time_precision) * time_precision
+    batch_interval_duration = time_precision * 2
 
     measurements = []
     for _ in range(test_case.measurement_count):
@@ -154,7 +158,7 @@ def run_test_inner(client_container: ClientContainer,
             test_case.vdaf,
             measurement,
             None,
-            min_batch_duration,
+            time_precision,
         )
     expected_aggregate_result = aggregate_measurements(
         test_case.vdaf, None, measurements)
