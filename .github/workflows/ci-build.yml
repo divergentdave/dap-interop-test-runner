@@ -1,0 +1,22 @@
+name: ci-build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - run: pip install --upgrade pip
+      name: Upgrade pip
+    - run: pip install -r requirements-dev.txt -e .
+      name: Install dependencies
+    - run: mypy src/runner tests
+      name: Type check
+    - run: python -m unittest
+      name: Unit tests
+    - run: flake8 src/runner tests
+      name: Formatting
