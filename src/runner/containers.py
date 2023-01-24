@@ -182,7 +182,7 @@ class AggregatorContainer(DAPContainer):
     def add_task(self, task_id: bytes, role: str,
                  leader_endpoint: str, helper_endpoint: str, vdaf: dict,
                  leader_token: str, collector_token: Union[str, None],
-                 verify_key: bytes, max_batch_query_count: int,
+                 vdaf_verify_key: bytes, max_batch_query_count: int,
                  min_batch_size: int, time_precision: int,
                  collector_hpke_config_base64: str, task_expiration: int):
         request_body = {
@@ -192,7 +192,7 @@ class AggregatorContainer(DAPContainer):
             "vdaf": vdaf,
             "leader_authentication_token": leader_token,
             "role": role,
-            "verify_key": encode_base64url(verify_key),
+            "vdaf_verify_key": encode_base64url(vdaf_verify_key),
             "max_batch_query_count": max_batch_query_count,
             "query_type": 1,
             "min_batch_size": min_batch_size,

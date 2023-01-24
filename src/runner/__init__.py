@@ -13,7 +13,7 @@ from .containers import (
 from .dap import generate_auth_token, generate_task_id
 from .models import ImageSet, TestCase
 from .vdaf import (
-    aggregate_measurements, generate_measurement, generate_verify_key,
+    aggregate_measurements, generate_measurement, generate_vdaf_verify_key,
 )
 
 IDENTIFIER_ALPHABET = string.ascii_lowercase + string.digits
@@ -94,7 +94,7 @@ def run_test_inner(client_container: ClientContainer,
     task_id = generate_task_id()
     aggregator_auth_token = generate_auth_token("leader")
     collector_auth_token = generate_auth_token("collector")
-    verify_key = generate_verify_key(test_case.vdaf)
+    vdaf_verify_key = generate_vdaf_verify_key(test_case.vdaf)
 
     leader_endpoint = leader_container.endpoint_for_task(task_id, "leader")
     helper_endpoint = helper_container.endpoint_for_task(task_id, "helper")
@@ -120,7 +120,7 @@ def run_test_inner(client_container: ClientContainer,
         test_case.vdaf,
         aggregator_auth_token,
         collector_auth_token,
-        verify_key,
+        vdaf_verify_key,
         max_batch_query_count,
         min_batch_size,
         time_precision,
@@ -135,7 +135,7 @@ def run_test_inner(client_container: ClientContainer,
         test_case.vdaf,
         aggregator_auth_token,
         None,
-        verify_key,
+        vdaf_verify_key,
         max_batch_query_count,
         min_batch_size,
         time_precision,

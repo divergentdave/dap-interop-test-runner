@@ -60,7 +60,7 @@ def aggregate_measurements(vdaf_dict: dict, _aggregation_param: None,
     raise Exception(f"Unsupported VDAF: {vdaf_type}")
 
 
-def generate_verify_key(vdaf_dict: dict) -> bytes:
+def generate_vdaf_verify_key(vdaf_dict: dict) -> bytes:
     """Generate a verification key for a VDAF"""
     vdaf_type = vdaf_dict["type"]
     if vdaf_type in ("Prio3Aes128Count", "Prio3Aes128Sum",
