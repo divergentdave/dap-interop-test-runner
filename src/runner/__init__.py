@@ -8,12 +8,14 @@ import time
 
 from . import containers
 from .containers import (
-    ClientContainer, AggregatorContainer, CollectorContainer,
+    ClientContainer, AggregatorContainer, CollectorContainer, InteropAPIError,
 )
 from .dap import generate_auth_token, generate_task_id
-from .models import ImageSet, TestCase
+from .models import (
+    FixedSizeQuery, ImageSet, Query, QueryType, TestCase, TimeIntervalQuery,
+)
 from .vdaf import (
-    aggregate_measurements, generate_measurement, generate_verify_key,
+    aggregate_measurements, generate_measurement, generate_vdaf_verify_key,
 )
 
 IDENTIFIER_ALPHABET = string.ascii_lowercase + string.digits
@@ -94,7 +96,7 @@ def run_test_inner(client_container: ClientContainer,
     task_id = generate_task_id()
     aggregator_auth_token = generate_auth_token("leader")
     collector_auth_token = generate_auth_token("collector")
-    verify_key = generate_verify_key(test_case.vdaf)
+    vdaf_verify_key = generate_vdaf_verify_key(test_case.vdaf)
 
     leader_endpoint = leader_container.endpoint_for_task(task_id, "leader")
     helper_endpoint = helper_container.endpoint_for_task(task_id, "helper")
@@ -104,11 +106,12 @@ def run_test_inner(client_container: ClientContainer,
         leader_endpoint,
         test_case.vdaf,
         collector_auth_token,
+        test_case.query_type,
     )
 
     # Fix these task parameters for now
     max_batch_query_count = 1
-    min_batch_size = 1
+    min_batch_size = test_case.measurement_count
     time_precision = 3600
     task_expiration = int(datetime.datetime(3000, 1, 1, 0, 0, 0).timestamp())
 
@@ -120,12 +123,13 @@ def run_test_inner(client_container: ClientContainer,
         test_case.vdaf,
         aggregator_auth_token,
         collector_auth_token,
-        verify_key,
+        vdaf_verify_key,
         max_batch_query_count,
         min_batch_size,
         time_precision,
         collector_hpke_config_base64,
         task_expiration,
+        test_case.query_type,
     )
     helper_container.add_task(
         task_id,
@@ -135,12 +139,13 @@ def run_test_inner(client_container: ClientContainer,
         test_case.vdaf,
         aggregator_auth_token,
         None,
-        verify_key,
+        vdaf_verify_key,
         max_batch_query_count,
         min_batch_size,
         time_precision,
         collector_hpke_config_base64,
         task_expiration,
+        test_case.query_type,
     )
 
     batch_interval_start = int(
@@ -163,17 +168,35 @@ def run_test_inner(client_container: ClientContainer,
     expected_aggregate_result = aggregate_measurements(
         test_case.vdaf, None, measurements)
 
-    handle = collector_container.collect_start(
-        task_id, None, batch_interval_start, batch_interval_duration)
+    query: Query
+    if test_case.query_type == QueryType.TIME_INTERVAL:
+        query = TimeIntervalQuery(
+            batch_interval_start,
+            batch_interval_duration,
+        )
+    elif test_case.query_type == QueryType.FIXED_SIZE:
+        query = FixedSizeQuery()
 
     result = None
-    for _ in range(60):
-        result = collector_container.collect_poll(handle)
+    for _ in range(5):
         if result is not None:
             break
-        time.sleep(1)
+        try:
+            handle = collector_container.collect_start(task_id, None, query)
+
+            for _ in range(30):
+                result = collector_container.collect_poll(handle)
+                if result is not None:
+                    break
+                time.sleep(1)
+            else:
+                raise Exception("Timed out waiting for collection to complete")
+
+        except InteropAPIError:
+            time.sleep(1)
+            continue
     else:
-        raise Exception("Timed out waiting for collection to complete")
+        raise Exception("Timed out waiting for collection flow")
 
     if expected_aggregate_result != result:
         raise Exception(

@@ -11,6 +11,18 @@ import docker  # type: ignore
 import requests
 import requests.adapters
 
+from runner.models import Query, QueryType
+
+
+class InteropAPIError(Exception):
+    "An error returned from an interop test API request."
+
+    def __init__(self, container: str, path: str, error_message: str):
+        message = (
+            f"Error from {container} upon {path} request: {error_message}"
+        )
+        super().__init__(message)
+
 
 class GeneratorStreamAdapter(io.RawIOBase):
     def __init__(self, gen):
@@ -48,7 +60,6 @@ class DAPContainer:
         # when round-tripping through the Image class.
         self.original_image = image
         self._container = container
-        self._session = requests.Session()
 
     def port(self) -> str:
         if not self._container.attrs["NetworkSettings"]["Ports"]:
@@ -80,9 +91,10 @@ class DAPContainer:
             return response_body
         else:
             error_message = response_body.get("error", "")
-            raise Exception(
-                f"Error from {self.original_image} upon {path} request: "
-                f"{error_message}"
+            raise InteropAPIError(
+                self.original_image,
+                path,
+                error_message,
             )
 
     def wait_for_ready(self):
@@ -182,9 +194,10 @@ class AggregatorContainer(DAPContainer):
     def add_task(self, task_id: bytes, role: str,
                  leader_endpoint: str, helper_endpoint: str, vdaf: dict,
                  leader_token: str, collector_token: Union[str, None],
-                 verify_key: bytes, max_batch_query_count: int,
+                 vdaf_verify_key: bytes, max_batch_query_count: int,
                  min_batch_size: int, time_precision: int,
-                 collector_hpke_config_base64: str, task_expiration: int):
+                 collector_hpke_config_base64: str, task_expiration: int,
+                 query_type: QueryType):
         request_body = {
             "task_id": encode_base64url(task_id),
             "leader": leader_endpoint,
@@ -192,9 +205,9 @@ class AggregatorContainer(DAPContainer):
             "vdaf": vdaf,
             "leader_authentication_token": leader_token,
             "role": role,
-            "verify_key": encode_base64url(verify_key),
+            "vdaf_verify_key": encode_base64url(vdaf_verify_key),
             "max_batch_query_count": max_batch_query_count,
-            "query_type": 1,
+            "query_type": query_type.value,
             "min_batch_size": min_batch_size,
             "time_precision": time_precision,
             "collector_hpke_config": collector_hpke_config_base64,
@@ -202,34 +215,31 @@ class AggregatorContainer(DAPContainer):
         }
         if collector_token is not None:
             request_body["collector_authentication_token"] = collector_token
+        if query_type == QueryType.FIXED_SIZE:
+            request_body["max_batch_size"] = min_batch_size
         self.make_request("internal/test/add_task", request_body)
 
 
 class CollectorContainer(DAPContainer):
     def add_task(self, task_id: bytes, leader_endpoint: str,
-                 vdaf: dict, auth_token: str) -> str:
+                 vdaf: dict, auth_token: str, query_type: QueryType) -> str:
         request_body = {
             "task_id": encode_base64url(task_id),
             "leader": leader_endpoint,
             "vdaf": vdaf,
             "collector_authentication_token": auth_token,
-            "query_type": 1,
+            "query_type": query_type.value,
         }
         response_body = self.make_request(
             "internal/test/add_task", request_body)
         return response_body["collector_hpke_config"]
 
     def collect_start(self, task_id: bytes, _aggregation_param: None,
-                      batch_interval_start: int,
-                      batch_interval_duration: int) -> str:
+                      query: Query) -> str:
         request_body = {
             "task_id": encode_base64url(task_id),
             "agg_param": "",
-            "query": {
-                "type": 1,
-                "batch_interval_start": batch_interval_start,
-                "batch_interval_duration": batch_interval_duration,
-            }
+            "query": query.to_json(),
         }
         response_body = self.make_request(
             "internal/test/collect_start", request_body)
