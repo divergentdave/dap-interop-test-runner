@@ -182,10 +182,10 @@ def run_test_inner(client_container: ClientContainer,
         if result is not None:
             break
         try:
-            handle = collector_container.collect_start(task_id, None, query)
+            handle = collector_container.collection_start(task_id, None, query)
 
             for _ in range(30):
-                result = collector_container.collect_poll(handle)
+                result = collector_container.collection_poll(handle)
                 if result is not None:
                     break
                 time.sleep(1)

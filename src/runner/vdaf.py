@@ -8,12 +8,12 @@ def generate_measurement(vdaf_dict: dict) -> str:
     Randomly generate a valid measurement for the given VDAF.
     """
     vdaf_type = vdaf_dict["type"]
-    if vdaf_type == "Prio3Aes128Count":
+    if vdaf_type == "Prio3Count":
         return str(random.randint(0, 1))
-    elif vdaf_type == "Prio3Aes128Sum":
+    elif vdaf_type == "Prio3Sum":
         bits = int(vdaf_dict["bits"])
         return str(random.randrange(0, 1 << bits))
-    elif vdaf_type == "Prio3Aes128Histogram":
+    elif vdaf_type == "Prio3Histogram":
         # Each bucket, except for those on the ends, is a left-open,
         # right-closed interval between bucket boundaries.
         buckets = [int(boundary) for boundary in vdaf_dict["buckets"]]
@@ -41,11 +41,11 @@ def aggregate_measurements(vdaf_dict: dict, _aggregation_param: None,
     measurements with a given aggregation parameter.
     """
     vdaf_type = vdaf_dict["type"]
-    if vdaf_type == "Prio3Aes128Count":
+    if vdaf_type == "Prio3Count":
         return str(sum(int(measurement) for measurement in measurements))
-    elif vdaf_type == "Prio3Aes128Sum":
+    elif vdaf_type == "Prio3Sum":
         return str(sum(int(measurement) for measurement in measurements))
-    elif vdaf_type == "Prio3Aes128Histogram":
+    elif vdaf_type == "Prio3Histogram":
         buckets = [int(boundary) for boundary in vdaf_dict["buckets"]]
         counts = [0] * (len(buckets) + 1)
         for measurement in measurements:
@@ -63,8 +63,8 @@ def aggregate_measurements(vdaf_dict: dict, _aggregation_param: None,
 def generate_vdaf_verify_key(vdaf_dict: dict) -> bytes:
     """Generate a verification key for a VDAF"""
     vdaf_type = vdaf_dict["type"]
-    if vdaf_type in ("Prio3Aes128Count", "Prio3Aes128Sum",
-                     "Prio3Aes128Histogram"):
+    if vdaf_type in ("Prio3Count", "Prio3Sum",
+                     "Prio3Histogram"):
         return secrets.token_bytes(16)
     else:
         raise Exception(f"Unsupported VDAF: {vdaf_type}")

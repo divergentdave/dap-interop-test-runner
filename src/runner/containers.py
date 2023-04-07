@@ -234,21 +234,21 @@ class CollectorContainer(DAPContainer):
             "internal/test/add_task", request_body)
         return response_body["collector_hpke_config"]
 
-    def collect_start(self, task_id: bytes, _aggregation_param: None,
-                      query: Query) -> str:
+    def collection_start(self, task_id: bytes, _aggregation_param: None,
+                         query: Query) -> str:
         request_body = {
             "task_id": encode_base64url(task_id),
             "agg_param": "",
             "query": query.to_json(),
         }
         response_body = self.make_request(
-            "internal/test/collect_start", request_body)
+            "internal/test/collection_start", request_body)
         return response_body["handle"]
 
-    def collect_poll(self, handle: str) -> Union[str, List[str], None]:
+    def collection_poll(self, handle: str) -> Union[str, List[str], None]:
         request_body = {"handle": handle}
         response_body = self.make_request(
-            "internal/test/collect_poll", request_body)
+            "internal/test/collection_poll", request_body)
         if response_body["status"] == "in progress":
             return None
         else:
