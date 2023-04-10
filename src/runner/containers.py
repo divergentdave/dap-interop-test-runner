@@ -60,11 +60,16 @@ class DAPContainer:
         # when round-tripping through the Image class.
         self.original_image = image
         self._container = container
+        if "cloudflare/daphne" in image:
+            self._internal_port = 8787
+        else:
+            self._internal_port = 8080
 
     def port(self) -> str:
         if not self._container.attrs["NetworkSettings"]["Ports"]:
             self._container.reload()
-        fwds = self._container.attrs["NetworkSettings"]["Ports"]["8080/tcp"]
+        key = f"{self._internal_port}/tcp"
+        fwds = self._container.attrs["NetworkSettings"]["Ports"][key]
         for fwd in fwds:
             if fwd["HostIp"] == "0.0.0.0":
                 return fwd["HostPort"]
@@ -75,7 +80,7 @@ class DAPContainer:
         return f"http://127.0.0.1:{self.port()}/"
 
     def container_base_url(self) -> str:
-        return f"http://{self._container.name}:8080/"
+        return f"http://{self._container.name}:{self._internal_port}/"
 
     def make_request(self, path: str, body: dict) -> dict:
         url = self.host_base_url() + path
@@ -278,6 +283,7 @@ def run_container(client: docker.DockerClient, image: str, name: str, network,
         network=network.name,
         ports={
             "8080/tcp": None,
+            "8787/tcp": None,
         }
     )
     try:
