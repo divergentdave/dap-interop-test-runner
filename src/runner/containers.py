@@ -211,6 +211,7 @@ class AggregatorContainer(DAPContainer):
             "leader_authentication_token": leader_token,
             "role": role,
             "vdaf_verify_key": encode_base64url(vdaf_verify_key),
+            "verify_key": encode_base64url(vdaf_verify_key),
             "max_batch_query_count": max_batch_query_count,
             "query_type": query_type.value,
             "min_batch_size": min_batch_size,
