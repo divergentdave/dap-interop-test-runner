@@ -203,6 +203,9 @@ class AggregatorContainer(DAPContainer):
                  min_batch_size: int, time_precision: int,
                  collector_hpke_config_base64: str, task_expiration: int,
                  query_type: QueryType):
+        if "cloudflare/daphne" in self.original_image:
+            vdaf = dict(vdaf)
+            vdaf["type"] = vdaf["type"].replace("Prio3", "Prio3Aes128")
         request_body = {
             "task_id": encode_base64url(task_id),
             "leader": leader_endpoint,
