@@ -5,6 +5,7 @@ import random
 import shutil
 import string
 import time
+import traceback
 
 from . import containers
 from .containers import (
@@ -78,9 +79,19 @@ def run_test(client, image_set: ImageSet, test_case: TestCase):
                                     ("collector", collector_container)):
                 subdirectory = os.path.join(LOG_ON_ERROR_DIRECTORY, name)
                 os.mkdir(subdirectory)
-                container.copy_logs_directory(subdirectory)
-                container.save_process_logs(os.path.join(
-                    subdirectory, "container_process.log"))
+                try:
+                    container.copy_logs_directory(subdirectory)
+                except Exception:
+                    traceback.print_exc()
+                    print("Error copying directory from container")
+                    print()
+                try:
+                    container.save_process_logs(os.path.join(
+                        subdirectory, "container_process.log"))
+                except Exception:
+                    traceback.print_exc()
+                    print("Error saving container logs")
+                    print()
             raise
 
 
