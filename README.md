@@ -1,4 +1,7 @@
-This is a reference interoperation test harness, using [draft-dcook-ppm-dap-interop-test-design-03](https://datatracker.ietf.org/doc/draft-dcook-ppm-dap-interop-test-design/03/), to test [DAP](https://datatracker.ietf.org/doc/draft-ietf-ppm-dap/03/) implementations against each other.
+This is a reference interoperation test harness, using
+[draft-dcook-ppm-dap-interop-test-design-06](https://datatracker.ietf.org/doc/draft-dcook-ppm-dap-interop-test-design/06/),
+to test [DAP](https://datatracker.ietf.org/doc/draft-ietf-ppm-dap/07/)
+implementations against each other.
 
 ## Prerequisites
 

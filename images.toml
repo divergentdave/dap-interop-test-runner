@@ -1,15 +1,15 @@
-# For now, all of these images are not available on any registries. They must
-# be built locally, and of course --pull cannot update them automatically.
+# Note that the prerelease images used below don't fully support DAP-07. They
+# ignore the "chunk_length" parameters provided, and compute their own. This
+# will be addressed in the near future.
 client = [
-    "janus_interop_client",
-    "divviup_ts_interop_client",
+    "us-west2-docker.pkg.dev/divviup-artifacts-public/janus/janus_interop_client:0.6.0-prerelease-1",
 ]
 leader = [
-    "janus_interop_aggregator",
+    "us-west2-docker.pkg.dev/divviup-artifacts-public/janus/janus_interop_aggregator:0.6.0-prerelease-1",
 ]
 helper = [
-    "janus_interop_aggregator",
+    "us-west2-docker.pkg.dev/divviup-artifacts-public/janus/janus_interop_aggregator:0.6.0-prerelease-1",
 ]
 collector = [
-    "janus_interop_collector",
+    "us-west2-docker.pkg.dev/divviup-artifacts-public/janus/janus_interop_collector:0.6.0-prerelease-1",
 ]
