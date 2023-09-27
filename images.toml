@@ -1,15 +1,12 @@
-# Note that the prerelease images used below don't fully support DAP-07. They
-# ignore the "chunk_length" parameters provided, and compute their own. This
-# will be addressed in the near future.
 client = [
-    "us-west2-docker.pkg.dev/divviup-artifacts-public/janus/janus_interop_client:0.6.0-prerelease-1",
+    "us-west2-docker.pkg.dev/divviup-artifacts-public/janus/janus_interop_client:0.6.0-prerelease-2",
 ]
 leader = [
-    "us-west2-docker.pkg.dev/divviup-artifacts-public/janus/janus_interop_aggregator:0.6.0-prerelease-1",
+    "us-west2-docker.pkg.dev/divviup-artifacts-public/janus/janus_interop_aggregator:0.6.0-prerelease-2",
 ]
 helper = [
-    "us-west2-docker.pkg.dev/divviup-artifacts-public/janus/janus_interop_aggregator:0.6.0-prerelease-1",
+    "us-west2-docker.pkg.dev/divviup-artifacts-public/janus/janus_interop_aggregator:0.6.0-prerelease-2",
 ]
 collector = [
-    "us-west2-docker.pkg.dev/divviup-artifacts-public/janus/janus_interop_collector:0.6.0-prerelease-1",
+    "us-west2-docker.pkg.dev/divviup-artifacts-public/janus/janus_interop_collector:0.6.0-prerelease-2",
 ]
