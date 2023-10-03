@@ -164,8 +164,9 @@ def encode_base64url(data: bytes) -> str:
 
 class ClientContainer(DAPContainer):
     def upload(self, task_id: bytes, leader_endpoint: str,
-               helper_endpoint: str, vdaf: dict, measurement: str,
-               time: Union[int, None], time_precision: int):
+               helper_endpoint: str, vdaf: dict,
+               measurement: Union[str, List[str]], time: Union[int, None],
+               time_precision: int):
         request_body = {
             "task_id": encode_base64url(task_id),
             "leader": leader_endpoint,
